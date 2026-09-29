@@ -218,6 +218,8 @@ Never invent doses, product registrations, PHI or REI. Mention PPE when chemical
         payload = response.json()
         raw = payload["choices"][0]["message"]["content"].strip()
         data = json.loads(raw)
+        if weather.get("status") != "ok":
+            data["weather_note"] = "Weather data was not requested, so no weather-based risk inference is included."
         return {
             "status": "ok",
             "mode": "Groq AI recommendation",
