@@ -425,10 +425,10 @@ def main():
 
     left, right = st.columns([1, 1.3], gap="large")
     with left:
-        st.image(image, caption=uploaded.name, use_container_width=True)
+        st.image(image, caption=uploaded.name, width="stretch")
 
     with right:
-        if st.button("🔍 Analyze disease", type="primary", use_container_width=True):
+        if st.button("🔍 Analyze disease", type="primary", width="stretch"):
             try:
                 with st.spinner("Loading model and analyzing the leaf…"):
                     model = load_prediction_model()
@@ -546,7 +546,7 @@ def main():
             st.warning(f"Add {secret_name} in Streamlit Secrets to enable {recommendation_provider}.")
         elif st.button(
             "🌐 Generate Groq recommendation" if is_groq else "🌐 Generate Google-grounded recommendation",
-            use_container_width=True,
+            width="stretch",
         ):
             button_label = "Generating Groq recommendation…" if is_groq else "Searching agricultural sources…"
             with st.spinner(button_label):
