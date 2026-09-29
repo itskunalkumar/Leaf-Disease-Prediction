@@ -233,7 +233,9 @@ def render_recommendation(result: dict):
                     st.markdown(f"- [{title}]({url})")
 
     elif result.get("status") == "not_configured":
-        st.info("Gemini is not configured. The app is using its local evidence-oriented recommendation engine.")
+        st.info("Local evidence-oriented guidance is active. Configure Gemini only when current web-grounded sources are needed.")
+    elif result.get("status") == "fallback":
+        st.success(result.get("mode", "Local recommendation engine active."))
     else:
         st.warning(
             "Grounded AI was unavailable, so the app is showing the local recommendation instead."
