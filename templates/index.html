@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="upload-card">
+    <div class="corner-tl"></div><div class="corner-tr"></div><div class="corner-bl"></div><div class="corner-br"></div>
+    <h1 class="hero-title">🌿 PLANT.AI</h1>
+    <p class="hero-subtitle">AI Disease Detection + Evidence-Grounded Treatment Intelligence</p>
+    <div class="feature-strip"><span>🧠 InceptionV3</span><span>🔎 Google Search</span><span>🧪 Treatment Engine</span><span>🛡 Safety Validator</span><span>🌦 Weather Context</span></div>
+    <form id="upload-file" method="post" enctype="multipart/form-data">
+        <label for="imageUpload" class="upload-box"><span class="upload-icon">📡</span><span class="upload-text-main">Scan Leaf Image</span><span class="upload-text-sub">Drag & Drop or Click · PNG · JPG · JPEG · Max 8 MB</span></label>
+        <input type="file" name="file" id="imageUpload" accept=".png,.jpg,.jpeg" required>
+        <div class="ai-controls">
+            <label for="country">Treatment region</label>
+            <select name="country" id="country"><option value="India" {% if default_country == 'India' %}selected{% endif %}>India</option><option value="United States">United States</option><option value="United Kingdom">United Kingdom</option><option value="Australia">Australia</option><option value="Canada">Canada</option><option value="Other">Other</option></select>
+            <label for="city" class="mt">Optional city</label><input name="city" id="city" placeholder="e.g. Pune, Indore, Delhi"><small>City is optional. If supplied, current weather is used only as disease-risk context.</small>
+        </div>
+        <div class="image-section"><div class="img-preview-wrap"><div class="img-preview"><div id="imagePreview"></div><div class="scan-overlay"></div></div><div class="img-label">READY FOR MULTI-STAGE ANALYSIS</div></div><button type="button" class="btn-predict" id="btn-predict">⚡ Analyze Disease + Treatment</button></div>
+    </form>
+    <div class="loader-wrap"><div class="loader"></div><p class="loader-text">CNN → quality gate → uncertainty → web research → treatment safety...</p></div>
+    <div id="result"></div>
+</div>
+<style>
+.feature-strip{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin:20px auto;max-width:850px}.feature-strip span{padding:8px 12px;border:1px solid rgba(0,255,157,.13);border-radius:999px;color:rgba(224,255,240,.7);font-size:.74rem}.ai-controls{margin:22px auto 4px;max-width:560px;text-align:left;padding:18px;border:1px solid rgba(0,255,157,.14);border-radius:16px;background:rgba(0,255,157,.035)}.ai-controls label{display:block;font-family:Orbitron,monospace;font-size:.65em;letter-spacing:2px;color:#00e5ff;margin-bottom:8px;text-transform:uppercase}.ai-controls select,.ai-controls input{width:100%;padding:11px 13px;border-radius:10px;border:1px solid rgba(0,255,157,.25);background:#06160d;color:#e0fff0;font:inherit}.ai-controls .mt{margin-top:14px}.ai-controls small{display:block;margin-top:8px;color:rgba(200,255,230,.55);line-height:1.5}.corner-tl,.corner-tr,.corner-bl,.corner-br{position:absolute;width:20px;height:20px;z-index:10}.corner-tl{top:12px;left:12px;border-top:2px solid #00ff9d;border-left:2px solid #00ff9d}.corner-tr{top:12px;right:12px;border-top:2px solid #00ff9d;border-right:2px solid #00ff9d}.corner-bl{bottom:12px;left:12px;border-bottom:2px solid #00ff9d;border-left:2px solid #00ff9d}.corner-br{bottom:12px;right:12px;border-bottom:2px solid #00ff9d;border-right:2px solid #00ff9d}.scan-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,transparent,rgba(0,255,157,.07),transparent);background-size:100% 40px;animation:scan 2.5s linear infinite;pointer-events:none;z-index:5}@keyframes scan{0%{background-position:0 -100px}100%{background-position:0 320px}}.img-label{font-family:Orbitron,monospace;font-size:.6em;color:#00ff9d;letter-spacing:3px;margin-top:10px;opacity:.7}.loader-wrap{display:none}.loader-text{font-family:Orbitron,monospace;font-size:.65em;color:#00e5ff;letter-spacing:2px;margin-top:5px}
+</style>
+{% endblock %}
