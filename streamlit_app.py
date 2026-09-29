@@ -16,7 +16,6 @@ import tensorflow as tf
 from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.inception_v3 import preprocess_input
 
-from image_quality import assess_image_bytes
 from treatment_engine import get_disease_profile
 from ai_recommendation import google_grounded_recommendation, local_fallback_recommendation
 from weather_engine import get_weather
@@ -38,17 +37,25 @@ CLASS_NAMES = [
     "Tomato_Late_blight",
 ]
 
+TOMATO_CLASS_NAMES = [
+    "Tomato__Tomato_mosaic_virus",
+    "Tomato__Tomato_YellowLeaf__Curl_Virus",
+    "Tomato_Bacterial_spot",
+    "Tomato_Early_blight",
+    "Tomato_Late_blight",
+]
+
 DISPLAY_NAMES = {
     "Pepper__bell___Bacterial_spot": "Pepper Bacterial Spot",
     "Pepper__bell___healthy": "Pepper Healthy",
     "Potato___Early_blight": "Potato Early Blight",
     "Potato___healthy": "Potato Healthy",
     "Potato___Late_blight": "Potato Late Blight",
-    "Tomato__Tomato_mosaic_virus": "Tomato Mosaic Virus",
-    "Tomato__Tomato_YellowLeaf__Curl_Virus": "Tomato Yellow Leaf Curl Virus",
-    "Tomato_Bacterial_spot": "Tomato Bacterial Spot",
-    "Tomato_Early_blight": "Tomato Early Blight",
-    "Tomato_Late_blight": "Tomato Late Blight",
+    "Tomato__Tomato_mosaic_virus": "Mosaic Virus",
+    "Tomato__Tomato_YellowLeaf__Curl_Virus": "Yellow Leaf Curl Virus",
+    "Tomato_Bacterial_spot": "Bacterial Spot",
+    "Tomato_Early_blight": "Early Blight",
+    "Tomato_Late_blight": "Late Blight",
 }
 
 CROP_NAMES = {
@@ -117,23 +124,25 @@ def predict_image(model, image: Image.Image):
 
     # One inference only: avoids the double-memory/CPU cost of test-time augmentation.
     predictions = normalize_predictions(model.predict(array, verbose=0)[0])
-    order = np.argsort(predictions)[::-1]
+    tomato_indices = [CLASS_NAMES.index(key) for key in TOMATO_CLASS_NAMES]
+    tomato_predictions = normalize_predictions(predictions[tomato_indices])
+    order = np.argsort(tomato_predictions)[::-1]
 
     entropy = float(
         -np.sum(
-            np.clip(predictions, 1e-9, 1.0)
-            * np.log(np.clip(predictions, 1e-9, 1.0))
+            np.clip(tomato_predictions, 1e-9, 1.0)
+            * np.log(np.clip(tomato_predictions, 1e-9, 1.0))
         )
     )
 
     top_predictions = []
     for index in order[:3]:
-        key = CLASS_NAMES[int(index)]
+        key = TOMATO_CLASS_NAMES[int(index)]
         top_predictions.append(
             {
                 "key": key,
                 "name": DISPLAY_NAMES[key],
-                "confidence": round(float(predictions[index]) * 100, 2),
+                "confidence": round(float(tomato_predictions[index]) * 100, 2),
                 "crop": CROP_NAMES[key],
             }
         )
@@ -337,6 +346,16 @@ def main():
         .empty-state p {color: var(--muted); max-width: 560px; line-height: 1.7;}
         .signal-row {display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.3rem;}
         .signal {border: 1px solid var(--line); border-radius: 999px; padding: .4rem .75rem; color: var(--mint); font: 500 .68rem 'DM Mono', monospace; letter-spacing: .05em; background: rgba(57,229,140,.05);}
+        .section-kicker {margin: 1.5rem 0 .7rem; color: var(--amber); font: 500 .68rem 'DM Mono', monospace; letter-spacing: .18em; text-transform: uppercase;}
+        .prediction-hero {display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; align-items: end; padding: 1.35rem 1.5rem; margin: .6rem 0 1.3rem; border: 1px solid rgba(57,229,140,.28); border-radius: 20px; background: linear-gradient(145deg, rgba(23,70,49,.82), rgba(7,25,19,.72)); box-shadow: 14px 16px 0 rgba(3,9,7,.35), 0 22px 48px rgba(0,0,0,.25); transform: perspective(900px) rotateX(2deg);}
+        .prediction-hero h2 {font-size: clamp(1.55rem, 3vw, 2.5rem); margin: .2rem 0 .4rem; color: var(--ink); letter-spacing: -.06em;}
+        .prediction-hero p {margin: 0; color: var(--muted); line-height: 1.55;}
+        .confidence-orb {display: grid; place-items: center; width: 112px; height: 112px; border: 1px solid rgba(114,229,224,.5); border-radius: 50%; color: var(--cyan); font: 700 1.1rem 'DM Mono', monospace; background: radial-gradient(circle, rgba(114,229,224,.18), rgba(7,25,19,.3) 62%); box-shadow: 0 0 0 10px rgba(114,229,224,.035), 0 0 44px rgba(114,229,224,.16); transform: translateZ(28px);}
+        .profile-grid {display: grid; grid-template-columns: .7fr 1.3fr; gap: .8rem; margin: .6rem 0 1rem;}
+        .profile-card {padding: 1rem 1.1rem; min-height: 86px; border: 1px solid var(--line); border-radius: 14px; background: linear-gradient(145deg, rgba(17,52,39,.72), rgba(7,24,18,.55)); box-shadow: 7px 8px 0 rgba(3,9,7,.28);}
+        .profile-card small {display: block; color: var(--amber); font: 500 .63rem 'DM Mono', monospace; letter-spacing: .14em; text-transform: uppercase; margin-bottom: .45rem;}
+        .profile-card strong {color: var(--ink); line-height: 1.45; font-weight: 700;}
+        @media (max-width: 800px) {.prediction-hero {grid-template-columns: 1fr;} .confidence-orb {width: 86px; height: 86px;}}
         @keyframes hero-in {from {opacity: 0; transform: translateY(18px) perspective(900px) rotateX(3deg);} to {opacity: 1; transform: translateY(0) perspective(900px) rotateX(0);}}
         @media (max-width: 800px) {.block-container {padding: 1rem 1rem 3rem;} .hero {min-height: 260px; padding: 1.3rem;} .hero::after {right: 1.3rem; bottom: .9rem;} [data-testid='stMetric'] {margin-bottom: .6rem;}}
         </style>
@@ -361,7 +380,7 @@ def main():
         st.divider()
         st.caption("Model: InceptionV3")
         st.caption("Input: 299 × 299 RGB")
-        st.caption("Classes: 10")
+        st.caption("Scope: 5 disease profiles")
         st.caption("Inference: single pass")
 
     st.markdown("<div class='upload-label'>Input surface / leaf image</div>", unsafe_allow_html=True)
@@ -396,11 +415,6 @@ def main():
     left, right = st.columns([1, 1.3], gap="large")
     with left:
         st.image(image, caption=uploaded.name, use_container_width=True)
-        quality = assess_image_bytes(image_bytes)
-        if quality["quality"] == "poor":
-            st.warning("Image quality is poor. A clearer photo may improve prediction reliability.")
-        elif quality["warnings"]:
-            st.info("Image quality notes: " + " ".join(quality["warnings"]))
 
     with right:
         if st.button("🔍 Analyze disease", type="primary", use_container_width=True):
@@ -411,10 +425,7 @@ def main():
                     profile = get_disease_profile(prediction["raw_disease"])
 
                     weather = get_weather(city) if city.strip() else {"status": "not_requested"}
-                    allow_treatment = (
-                        prediction["confidence_band"] != "low"
-                        and quality["quality"] != "poor"
-                    )
+                    allow_treatment = prediction["confidence_band"] != "low"
                     local = local_fallback_recommendation(
                         prediction["raw_disease"],
                         prediction["disease"],
@@ -427,7 +438,6 @@ def main():
 
                     st.session_state["analysis"] = {
                         "prediction": prediction,
-                        "quality": quality,
                         "profile": profile,
                         "weather": weather,
                         "local_recommendation": local,
@@ -446,11 +456,24 @@ def main():
 
     prediction = analysis["prediction"]
     st.divider()
-    st.subheader("Prediction")
+    st.markdown("<div class='section-kicker'>Analysis result / visual signal</div>", unsafe_allow_html=True)
+    st.markdown(
+        f"""
+        <div class="prediction-hero">
+            <div>
+                <div class="hero-tag">Primary pattern detected</div>
+                <h2>{prediction['disease']}</h2>
+                <p>{prediction['confidence_label']} · {prediction['margin']:.2f} point separation from the next profile.</p>
+            </div>
+            <div class="confidence-orb">{prediction['confidence']:.0f}%</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     metric_cols = st.columns(4)
     metric_cols[0].metric("Condition", prediction["disease"])
-    metric_cols[1].metric("Crop", prediction["crop"])
+    metric_cols[1].metric("Scope", "Leaf disease")
     metric_cols[2].metric("Confidence", f"{prediction['confidence']:.2f}%")
     metric_cols[3].metric("Top-2 margin", f"{prediction['margin']:.2f} pts")
 
@@ -461,20 +484,24 @@ def main():
     else:
         st.error(prediction["confidence_label"])
 
-    st.markdown("### Top predictions")
+    st.markdown("### Prediction profiles")
     for item in prediction["top_predictions"]:
         st.progress(
             min(item["confidence"] / 100.0, 1.0),
             text=f"{item['name']} — {item['confidence']:.2f}%",
         )
 
-    with st.expander("Image quality", expanded=False):
-        st.json(analysis["quality"])
-
-    with st.expander("Disease profile", expanded=False):
+    with st.expander("Disease profile", expanded=True):
         profile = analysis["profile"]
-        st.write(f"**Category:** {profile.get('category', 'Plant health condition')}")
-        st.write(f"**Cause:** {profile.get('cause', '')}")
+        st.markdown(
+            f"""
+            <div class="profile-grid">
+                <div class="profile-card"><small>Classification</small><strong>{profile.get('category', 'Plant health condition')}</strong></div>
+                <div class="profile-card"><small>Likely cause</small><strong>{profile.get('cause', '')}</strong></div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         render_list("Symptoms", profile.get("symptoms", []))
         render_list("Integrated management", profile.get("ipm", []))
         render_list("Active ingredients / options", profile.get("active_ingredients", []))
@@ -516,7 +543,7 @@ def main():
                     prediction["confidence"],
                     prediction["margin"],
                     analysis["country"],
-                    prediction["confidence_band"] != "low" and analysis["quality"]["quality"] != "poor",
+                    prediction["confidence_band"] != "low",
                     analysis["weather"],
                 )
                 analysis["ai_recommendation"] = ai_result
