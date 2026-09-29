@@ -552,7 +552,7 @@ def main():
             with st.spinner(button_label):
                 env_prefix = "GROQ" if is_groq else "GEMINI"
                 os.environ[f"{env_prefix}_API_KEY"] = api_key
-                os.environ[f"{env_prefix}_MODEL"] = get_secret(f"{env_prefix}_MODEL", "llama-3.3-70b-versatile" if is_groq else "gemini-3.8-flash")
+                os.environ[f"{env_prefix}_MODEL"] = get_secret(f"{env_prefix}_MODEL", "qwen/qwen3.8-27b" if is_groq else "gemini-3.8-flash")
                 recommendation_function = groq_recommendation if is_groq else google_grounded_recommendation
                 ai_result = recommendation_function(
                     prediction["raw_disease"], prediction["crop"], prediction["confidence"], prediction["margin"],

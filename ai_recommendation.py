@@ -207,7 +207,7 @@ Never invent doses, product registrations, PHI or REI. Mention PPE when chemical
             "https://api.groq.com/openai/v1/chat/completions",
             headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
             json={
-                "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                "model": os.getenv("GROQ_MODEL", "qwen/qwen3.8-27b"),
                 "messages": [{"role": "user", "content": prompt}],
                 "temperature": 0.1,
                 "response_format": {"type": "json_object"},

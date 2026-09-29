@@ -28,7 +28,7 @@ For a free-tier AI recommendation provider, add these instead or alongside Gemin
 
 ```toml
 GROQ_API_KEY = "your-key"
-GROQ_MODEL = "llama-3.3-70b-versatile"
+GROQ_MODEL = "qwen/qwen3.8-27b"
 ```
 
 Select the recommendation engine in the app sidebar. Groq provides AI recommendations without Google Search grounding.
