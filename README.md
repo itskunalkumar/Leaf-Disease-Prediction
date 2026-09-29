@@ -165,8 +165,6 @@ The model can classify **10 disease/health categories**:
 Upload a leaf image and get an AI-powered disease prediction with
 confidence and treatment recommendations.
 
-<div align="center">
-
 ---
 
 ## 🗂️ Project Structure
@@ -202,6 +200,7 @@ pip install -r requirements.txt
 
 # 4️⃣ Run the app
 python app.py
+```
 
 ---
 
