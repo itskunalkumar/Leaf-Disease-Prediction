@@ -242,15 +242,108 @@ def main():
     st.markdown(
         """
         <style>
-        .block-container {max-width: 1200px; padding-top: 2rem;}
-        .hero {padding: 1.2rem 0 0.5rem 0;}
-        .hero h1 {font-size: 2.7rem; margin-bottom: .2rem;}
-        .hero p {font-size: 1.05rem; opacity: .78;}
-        .metric-card {padding: 1rem; border: 1px solid rgba(128,128,128,.25); border-radius: 14px;}
+        @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;600;700;800&display=swap');
+        :root {
+            --forest: #07130f;
+            --forest-deep: #030907;
+            --mint: #a5f3c7;
+            --green: #39e58c;
+            --cyan: #72e5e0;
+            --amber: #f4c96b;
+            --ink: #eaf8ef;
+            --muted: #91aaa0;
+            --line: rgba(165, 243, 199, .16);
+            --glass: rgba(10, 31, 24, .7);
+        }
+        html, body, [class*='css'] {font-family: 'Manrope', sans-serif;}
+        .stApp {
+            color: var(--ink);
+            background:
+                linear-gradient(135deg, rgba(57, 229, 140, .05), transparent 38%),
+                radial-gradient(circle at 82% 8%, rgba(114, 229, 224, .09), transparent 25%),
+                var(--forest-deep);
+        }
+        .stApp::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            opacity: .3;
+            background-image: linear-gradient(rgba(165,243,199,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(165,243,199,.045) 1px, transparent 1px);
+            background-size: 42px 42px;
+            mask-image: linear-gradient(to bottom, black, transparent 78%);
+        }
+        .block-container {max-width: 1380px; padding: 2.2rem 3rem 5rem; position: relative;}
+        [data-testid='stSidebar'] {background: rgba(3, 15, 11, .94); border-right: 1px solid var(--line);}
+        [data-testid='stSidebar'] > div:first-child {padding-top: 2rem;}
+        [data-testid='stSidebar'] h2, [data-testid='stSidebar'] label {color: var(--mint);}
+        [data-testid='stSidebar'] .stCaption {color: var(--muted);}
+        .hero {
+            min-height: 230px;
+            padding: 1.6rem 2rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--line);
+            border-radius: 26px;
+            position: relative;
+            overflow: hidden;
+            transform-style: preserve-3d;
+            background: linear-gradient(110deg, rgba(14, 48, 34, .88), rgba(7, 24, 19, .55));
+            box-shadow: 0 26px 80px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255,255,255,.08);
+            animation: hero-in .8s cubic-bezier(.22, 1, .36, 1) both;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 520px;
+            height: 180px;
+            right: -120px;
+            top: -80px;
+            border: 1px solid rgba(114,229,224,.24);
+            border-radius: 50%;
+            transform: rotate(-18deg) translateZ(30px);
+            box-shadow: 0 0 80px rgba(57,229,140,.12), inset 0 0 30px rgba(114,229,224,.06);
+        }
+        .hero::after {
+            content: 'LIVE / VISION ENGINE';
+            position: absolute;
+            right: 1.8rem;
+            bottom: 1.3rem;
+            color: rgba(165,243,199,.58);
+            font: 500 .66rem 'DM Mono', monospace;
+            letter-spacing: .18em;
+        }
+        .hero h1 {font-size: clamp(2.4rem, 5vw, 4.8rem); line-height: .95; letter-spacing: -.07em; margin: 0 0 .8rem; color: var(--ink); text-shadow: 0 12px 34px rgba(0,0,0,.3);}
+        .hero h1 span {color: var(--green);}
+        .hero p {max-width: 580px; font-size: 1rem; line-height: 1.7; color: var(--muted); margin: 0;}
+        .hero-tag {color: var(--amber); font: 500 .7rem 'DM Mono', monospace; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 1.2rem;}
+        .upload-label {color: var(--mint); font: 500 .7rem 'DM Mono', monospace; letter-spacing: .16em; text-transform: uppercase; margin: .4rem 0 .65rem;}
+        [data-testid='stFileUploader'] {border: 1px solid var(--line); border-radius: 20px; padding: .5rem; background: rgba(10,31,24,.58); box-shadow: 0 18px 50px rgba(0,0,0,.25), inset 0 1px 0 rgba(255,255,255,.06);}
+        [data-testid='stFileUploaderDropzone'] {border: 1px dashed rgba(57,229,140,.42); background: rgba(57,229,140,.035); border-radius: 15px; transition: .3s ease;}
+        [data-testid='stFileUploaderDropzone']:hover {border-color: var(--green); background: rgba(57,229,140,.1); transform: translateY(-2px);}
+        [data-testid='stImage'] img {border-radius: 18px; border: 1px solid var(--line); box-shadow: 0 24px 54px rgba(0,0,0,.4);}
+        .stButton > button {border: 1px solid rgba(57,229,140,.52); border-radius: 12px; background: linear-gradient(135deg, #35d783, #0c9361); color: #03130b; font-weight: 800; box-shadow: 0 12px 28px rgba(57,229,140,.16); transition: transform .25s ease, box-shadow .25s ease;}
+        .stButton > button:hover {transform: translateY(-3px); box-shadow: 0 17px 34px rgba(57,229,140,.26); border-color: var(--mint);}
+        [data-testid='stMetric'] {padding: 1.1rem 1.25rem; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(145deg, rgba(17,52,39,.8), rgba(7,24,18,.62)); box-shadow: 10px 14px 0 rgba(3,9,7,.34), 0 16px 35px rgba(0,0,0,.22); transform: perspective(700px) rotateX(2deg);}
+        [data-testid='stMetricLabel'] {color: var(--muted); font: 500 .68rem 'DM Mono', monospace; letter-spacing: .1em; text-transform: uppercase;}
+        [data-testid='stMetricValue'] {color: var(--mint); font-weight: 800; letter-spacing: -.04em;}
+        [data-testid='stProgressBar'] > div > div {background: linear-gradient(90deg, var(--green), var(--cyan));}
+        [data-testid='stExpander'] {border: 1px solid var(--line); border-radius: 15px; background: rgba(9, 29, 22, .52);}
+        .stAlert {border-radius: 14px; border: 1px solid var(--line); background: rgba(12, 40, 29, .64);}
+        hr {border-color: var(--line); margin: 2rem 0;}
+        h2, h3 {color: var(--mint); letter-spacing: -.035em;}
+        code, .stCaption {font-family: 'DM Mono', monospace;}
+        .empty-state {padding: 2.6rem 2rem; margin-top: 1rem; border: 1px solid var(--line); border-radius: 22px; background: rgba(9, 29, 22, .52); box-shadow: 0 20px 60px rgba(0,0,0,.18);}
+        .empty-state h2 {margin: 0 0 .5rem; color: var(--ink);}
+        .empty-state p {color: var(--muted); max-width: 560px; line-height: 1.7;}
+        .signal-row {display: flex; gap: .6rem; flex-wrap: wrap; margin-top: 1.3rem;}
+        .signal {border: 1px solid var(--line); border-radius: 999px; padding: .4rem .75rem; color: var(--mint); font: 500 .68rem 'DM Mono', monospace; letter-spacing: .05em; background: rgba(57,229,140,.05);}
+        @keyframes hero-in {from {opacity: 0; transform: translateY(18px) perspective(900px) rotateX(3deg);} to {opacity: 1; transform: translateY(0) perspective(900px) rotateX(0);}}
+        @media (max-width: 800px) {.block-container {padding: 1rem 1rem 3rem;} .hero {min-height: 260px; padding: 1.3rem;} .hero::after {right: 1.3rem; bottom: .9rem;} [data-testid='stMetric'] {margin-bottom: .6rem;}}
         </style>
         <div class="hero">
-            <h1>🌿 PlantAI</h1>
-            <p>AI-powered leaf disease detection with optional Google-grounded agricultural guidance.</p>
+            <div class="hero-tag">Plant health intelligence / 01</div>
+            <h1>Plant<span>AI</span></h1>
+            <p>See the signal in every leaf. Upload a field image and turn visual symptoms into a clear, evidence-oriented next move.</p>
         </div>
         """,
         unsafe_allow_html=True,
@@ -271,6 +364,7 @@ def main():
         st.caption("Classes: 10")
         st.caption("Inference: single pass")
 
+    st.markdown("<div class='upload-label'>Input surface / leaf image</div>", unsafe_allow_html=True)
     uploaded = st.file_uploader(
         "Upload a clear leaf image",
         type=["jpg", "jpeg", "png"],
@@ -279,9 +373,21 @@ def main():
     )
 
     if uploaded is None:
-        st.info("Upload a leaf image to begin analysis.")
-        st.markdown("### Supported predictions")
-        st.write(", ".join(DISPLAY_NAMES.values()))
+        st.markdown(
+            """
+            <div class="empty-state">
+                <h2>Bring a leaf into focus</h2>
+                <p>Drop a clear, well-lit image above. The vision engine will score the crop, surface the top three conditions, and assemble a conservative management path.</p>
+                <div class="signal-row">
+                    <span class="signal">299 × 299 RGB</span>
+                    <span class="signal">10 conditions</span>
+                    <span class="signal">single-pass inference</span>
+                    <span class="signal">IPM guidance</span>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
         return
 
     image_bytes = uploaded.getvalue()
