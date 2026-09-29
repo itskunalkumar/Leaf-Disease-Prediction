@@ -219,7 +219,7 @@ Never invent doses, product registrations, PHI or REI. Mention PPE when chemical
         raw = payload["choices"][0]["message"]["content"].strip()
         data = json.loads(raw)
         if weather.get("status") != "ok":
-            data["weather_note"] = "Weather data was not requested, so no weather-based risk inference is included."
+            data["weather_note"] = ""
         return {
             "status": "ok",
             "mode": "Groq AI recommendation",
@@ -279,5 +279,5 @@ def local_fallback_recommendation(disease: str, display_name: str, crop: str, co
 
 def _weather_note(weather: Dict[str, Any]) -> str:
     if weather.get("status") != "ok":
-        return "Current weather was not included. Disease risk depends on local conditions."
+        return ""
     return f"{weather.get('city')}: {weather.get('temperature_c')}°C, humidity {weather.get('humidity_pct')}%, precipitation {weather.get('precipitation_mm')} mm. Risk context: {weather.get('risk')}." + (" Reasons: " + ", ".join(weather.get('reasons', [])) + "." if weather.get('reasons') else "")
