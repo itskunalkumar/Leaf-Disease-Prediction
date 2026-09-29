@@ -24,6 +24,15 @@ GEMINI_MODEL = "gemini-3.8-flash"
 APP_COUNTRY = "India"
 ```
 
+For a free-tier AI recommendation provider, add these instead or alongside Gemini:
+
+```toml
+GROQ_API_KEY = "your-key"
+GROQ_MODEL = "llama-3.3-70b-versatile"
+```
+
+Select the recommendation engine in the app sidebar. Groq provides AI recommendations without Google Search grounding.
+
 Do not commit `.streamlit/secrets.toml`.
 
 ## Local run

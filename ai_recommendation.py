@@ -3,6 +3,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any, Dict, List
 
+import requests
+
 from treatment_engine import get_disease_profile
 
 
@@ -163,6 +165,75 @@ Rules:
         return {"status": "ok", "mode": "AI + Google Search grounding", "data": data, "sources": sources, "searched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")}
     except Exception as exc:
         return {"status": "error", "error": str(exc)[:400]}
+
+
+def groq_recommendation(disease: str, crop: str, confidence: float, margin: float, country: str = "India", allow_treatment: bool = True, weather: Dict[str, Any] | None = None) -> Dict[str, Any]:
+    api_key = os.getenv("GROQ_API_KEY")
+    if not api_key:
+        return {"status": "not_configured", "provider": "Groq"}
+
+    profile = get_disease_profile(disease)
+    weather = weather or {"status": "not_requested"}
+    treatment_rule = (
+        "The classifier is uncertain. Do not recommend pesticide products, active ingredients, doses or spray schedules. "
+        "Give confirmation steps and non-chemical management only."
+        if not allow_treatment else
+        "You may identify evidence-supported active ingredients/options, but never invent a dose, formulation, interval, "
+        "registration status, PHI or REI. Say to follow the current local product label when exact evidence is unavailable."
+    )
+    prompt = f"""
+You are PlantAI, an agricultural decision-support assistant for tomato leaf disease management.
+
+Predicted condition: {disease}
+Confidence: {confidence:.2f}%
+Top-1/top-2 margin: {margin:.2f} percentage points
+Region: {country}
+Date: {datetime.now(timezone.utc).date().isoformat()}
+Optional weather: {json.dumps(weather, ensure_ascii=False)}
+Base disease profile: {json.dumps(profile, ensure_ascii=False)}
+
+{treatment_rule}
+
+Return only valid JSON with exactly these keys:
+summary, cause, symptoms, immediate_actions, treatment_options, active_ingredients,
+application_requirements, safety_requirements, resistance_management, prevention,
+weather_note, when_to_seek_expert, confidence_note, dosage_status, dosage_details.
+Array values must be arrays of strings. This is plant disease management, not human medicine.
+Do not claim fungicides cure viral disease. Do not recommend pesticide treatment for a healthy prediction.
+Never invent doses, product registrations, PHI or REI. Mention PPE when chemical treatment is discussed.
+"""
+    try:
+        response = requests.post(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"},
+            json={
+                "model": os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.1,
+                "response_format": {"type": "json_object"},
+            },
+            timeout=45,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        raw = payload["choices"][0]["message"]["content"].strip()
+        data = json.loads(raw)
+        return {
+            "status": "ok",
+            "mode": "Groq AI recommendation",
+            "data": data,
+            "sources": [],
+            "searched_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        }
+    except requests.HTTPError as exc:
+        detail = exc.response.text[:350] if exc.response is not None else str(exc)
+        return {"status": "error", "provider": "Groq", "error": f"Groq API error: {detail}"}
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+        return {"status": "error", "provider": "Groq", "error": f"Invalid Groq response: {exc}"}
+    except requests.RequestException as exc:
+        return {"status": "error", "provider": "Groq", "error": f"Groq connection error: {exc}"}
+    except Exception as exc:
+        return {"status": "error", "provider": "Groq", "error": str(exc)[:400]}
 
 
 def local_fallback_recommendation(disease: str, display_name: str, crop: str, confidence: float, margin: float, allow_treatment: bool, weather: Dict[str, Any] | None = None) -> Dict[str, Any]:

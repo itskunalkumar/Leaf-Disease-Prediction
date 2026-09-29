@@ -17,7 +17,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.inception_v3 import preprocess_input
 
 from treatment_engine import get_disease_profile
-from ai_recommendation import google_grounded_recommendation, local_fallback_recommendation
+from ai_recommendation import groq_recommendation, google_grounded_recommendation, local_fallback_recommendation
 from weather_engine import get_weather
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -233,7 +233,8 @@ def render_recommendation(result: dict):
                     st.markdown(f"- [{title}]({url})")
 
     elif result.get("status") == "not_configured":
-        st.info("Local evidence-oriented guidance is active. Configure Gemini only when current web-grounded sources are needed.")
+        provider = result.get("provider", "AI")
+        st.info(f"Local evidence-oriented guidance is active. Configure {provider} only when an AI recommendation is needed.")
     elif result.get("status") == "fallback":
         st.success(result.get("mode", "Local recommendation engine active."))
     elif result.get("status") == "error":
@@ -382,10 +383,10 @@ def main():
         st.header("Settings")
         country = st.text_input("Country / region", value=get_secret("APP_COUNTRY", "India"))
         city = st.text_input("City (optional)", value="")
-        use_grounded_ai = st.checkbox(
-            "Use Gemini + Google Search grounding",
-            value=False,
-            help="Enable this only after the disease prediction is complete. It makes a separate web-grounded AI request.",
+        recommendation_provider = st.selectbox(
+            "Recommendation engine",
+            ["Local safety engine", "Groq AI", "Gemini + Google Search"],
+            help="Local guidance is always available. Groq provides AI text recommendations; Gemini also adds Google Search grounding.",
         )
         st.divider()
         st.caption("Model: InceptionV3")
@@ -537,31 +538,32 @@ def main():
     st.subheader("Treatment & management guidance")
     render_recommendation(analysis["local_recommendation"])
 
-    if use_grounded_ai:
-        api_key = get_secret("GEMINI_API_KEY")
+    if recommendation_provider != "Local safety engine":
+        is_groq = recommendation_provider == "Groq AI"
+        secret_name = "GROQ_API_KEY" if is_groq else "GEMINI_API_KEY"
+        api_key = get_secret(secret_name)
         if not api_key:
-            st.warning("Add GEMINI_API_KEY in Streamlit Secrets to enable Google-grounded recommendations.")
-        elif st.button("🌐 Generate Google-grounded recommendation", use_container_width=True):
-            with st.spinner("Searching current agricultural sources and generating guidance…"):
-                # The function reads GEMINI_API_KEY from the environment, so expose the
-                # Streamlit secret only for this process without storing it in the repo.
-                os.environ["GEMINI_API_KEY"] = api_key
-                os.environ["GEMINI_MODEL"] = get_secret("GEMINI_MODEL", "gemini-3.8-flash")
-                ai_result = google_grounded_recommendation(
-                    prediction["raw_disease"],
-                    prediction["crop"],
-                    prediction["confidence"],
-                    prediction["margin"],
-                    analysis["country"],
-                    prediction["confidence_band"] != "low",
-                    analysis["weather"],
+            st.warning(f"Add {secret_name} in Streamlit Secrets to enable {recommendation_provider}.")
+        elif st.button(
+            "🌐 Generate Groq recommendation" if is_groq else "🌐 Generate Google-grounded recommendation",
+            use_container_width=True,
+        ):
+            button_label = "Generating Groq recommendation…" if is_groq else "Searching agricultural sources…"
+            with st.spinner(button_label):
+                env_prefix = "GROQ" if is_groq else "GEMINI"
+                os.environ[f"{env_prefix}_API_KEY"] = api_key
+                os.environ[f"{env_prefix}_MODEL"] = get_secret(f"{env_prefix}_MODEL", "llama-3.3-70b-versatile" if is_groq else "gemini-3.8-flash")
+                recommendation_function = groq_recommendation if is_groq else google_grounded_recommendation
+                ai_result = recommendation_function(
+                    prediction["raw_disease"], prediction["crop"], prediction["confidence"], prediction["margin"],
+                    analysis["country"], prediction["confidence_band"] != "low", analysis["weather"],
                 )
                 analysis["ai_recommendation"] = ai_result
                 st.session_state["analysis"] = analysis
 
         if analysis.get("ai_recommendation"):
             st.divider()
-            st.subheader("Google-grounded recommendation")
+            st.subheader(f"{recommendation_provider} recommendation")
             render_recommendation(analysis["ai_recommendation"])
 
     st.caption(
