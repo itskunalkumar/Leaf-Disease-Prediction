@@ -17,7 +17,7 @@ from tensorflow.keras.models import load_model
 from tensorflow.keras.applications.inception_v3 import preprocess_input
 
 from treatment_engine import get_disease_profile
-from ai_recommendation import groq_recommendation, google_grounded_recommendation, local_fallback_recommendation
+from ai_recommendation import groq_recommendation, local_fallback_recommendation
 from weather_engine import get_weather
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -182,6 +182,8 @@ def get_secret(name: str, default: str = "") -> str:
 def render_list(title: str, items):
     if not items:
         return
+    if isinstance(items, str):
+        items = [items]
     st.markdown(f"**{title}**")
     for item in items:
         st.markdown(f"- {item}")
@@ -238,12 +240,12 @@ def render_recommendation(result: dict):
     elif result.get("status") == "fallback":
         st.success(result.get("mode", "Local recommendation engine active."))
     elif result.get("status") == "error":
-        error = result.get("error", "Unknown Gemini request error.")
+        error = result.get("error", "Unknown AI request error.")
         if "429" in error or "RESOURCE_EXHAUSTED" in error:
-            st.warning("Gemini quota is exhausted. The app is showing the local recommendation instead.")
-            st.caption("Check your Gemini API quota and billing, then retry the grounded recommendation.")
+            st.warning("AI provider quota is exhausted. The app is showing the local recommendation instead.")
+            st.caption("Check the configured provider quota, then retry the AI recommendation.")
         else:
-            st.warning("The grounded recommendation request failed. The app is showing the local recommendation instead.")
+            st.warning("The AI recommendation request failed. The app is showing the local recommendation instead.")
             st.caption(error)
     else:
         st.warning(
@@ -385,8 +387,8 @@ def main():
         city = st.text_input("City (optional)", value="")
         recommendation_provider = st.selectbox(
             "Recommendation engine",
-            ["Local safety engine", "Groq AI", "Gemini + Google Search"],
-            help="Local guidance is always available. Groq provides AI text recommendations; Gemini also adds Google Search grounding.",
+            ["Local safety engine", "Groq AI"],
+            help="Local guidance is always available. Groq provides optional AI text recommendations.",
         )
         st.divider()
         st.caption("Model: InceptionV3")
@@ -539,22 +541,18 @@ def main():
     render_recommendation(analysis["local_recommendation"])
 
     if recommendation_provider != "Local safety engine":
-        is_groq = recommendation_provider == "Groq AI"
-        secret_name = "GROQ_API_KEY" if is_groq else "GEMINI_API_KEY"
+        secret_name = "GROQ_API_KEY"
         api_key = get_secret(secret_name)
         if not api_key:
             st.warning(f"Add {secret_name} in Streamlit Secrets to enable {recommendation_provider}.")
         elif st.button(
-            "🌐 Generate Groq recommendation" if is_groq else "🌐 Generate Google-grounded recommendation",
+            "🌐 Generate Groq recommendation",
             width="stretch",
         ):
-            button_label = "Generating Groq recommendation…" if is_groq else "Searching agricultural sources…"
-            with st.spinner(button_label):
-                env_prefix = "GROQ" if is_groq else "GEMINI"
-                os.environ[f"{env_prefix}_API_KEY"] = api_key
-                os.environ[f"{env_prefix}_MODEL"] = get_secret(f"{env_prefix}_MODEL", "qwen/qwen3.8-27b" if is_groq else "gemini-3.8-flash")
-                recommendation_function = groq_recommendation if is_groq else google_grounded_recommendation
-                ai_result = recommendation_function(
+            with st.spinner("Generating Groq recommendation…"):
+                os.environ["GROQ_API_KEY"] = api_key
+                os.environ["GROQ_MODEL"] = get_secret("GROQ_MODEL", "qwen/qwen3.8-27b")
+                ai_result = groq_recommendation(
                     prediction["raw_disease"], prediction["crop"], prediction["confidence"], prediction["margin"],
                     analysis["country"], prediction["confidence_band"] != "low", analysis["weather"],
                 )
