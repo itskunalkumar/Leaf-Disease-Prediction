@@ -236,6 +236,14 @@ def render_recommendation(result: dict):
         st.info("Local evidence-oriented guidance is active. Configure Gemini only when current web-grounded sources are needed.")
     elif result.get("status") == "fallback":
         st.success(result.get("mode", "Local recommendation engine active."))
+    elif result.get("status") == "error":
+        error = result.get("error", "Unknown Gemini request error.")
+        if "429" in error or "RESOURCE_EXHAUSTED" in error:
+            st.warning("Gemini quota is exhausted. The app is showing the local recommendation instead.")
+            st.caption("Check your Gemini API quota and billing, then retry the grounded recommendation.")
+        else:
+            st.warning("The grounded recommendation request failed. The app is showing the local recommendation instead.")
+            st.caption(error)
     else:
         st.warning(
             "Grounded AI was unavailable, so the app is showing the local recommendation instead."
